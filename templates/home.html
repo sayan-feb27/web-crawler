@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Web Crawler</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <script defer src="https://unpkg.com/alpinejs@3.10.5/dist/cdn.min.js"></script>
+</head>
+<body>
+    <section class="section is-fullheight">
+        <section class="container is-medium" x-data="crawler">
+            <h1 class="title">
+                Web Crawler
+            </h1>
+            <p class="subtitle">
+                Beautiful <strong>Soup</strong>!
+            </p>
+
+            <form
+                    id="crawlerForm"
+                    action="{% url "crawl" %}"
+                    @submit.prevent="getLinks"
+                    enctype="application/x-www-form-urlencoded">
+                {% csrf_token %}
+                <div class="field">
+                    <label class="label" for="{{ form.url.id_for_label }}">URL</label>
+                    <div class="control">
+                        {{ form.url }}
+                    </div>
+                    <p class="help">Enter website url you want to crawl</p>
+                </div>
+                <input class="button is-primary" type="submit" value="GO">
+            </form>
+
+            <div class="content" x-show="links">
+                <ol x-data="links">
+                    <template x-for="link in links">
+                        <li x-text="link"></li>
+                    </template>
+                </ol>
+            </div>
+        </section>
+    </section>
+
+    <script>
+        const CRAWLER_FORM_ID = 'crawlerForm';
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('crawler', () => ({
+                links: [],
+                url: '',
+
+                getLinks() {
+                    const form = document.getElementById(CRAWLER_FORM_ID);
+                    const formData = new FormData(form);
+                    const action = form.getAttribute('action');
+
+                    fetch(action, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then((response) => {
+                        if (!response.ok) {
+                          throw new Error(`HTTP error, status = ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then((data) => {
+                        this.links = data.links;
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                    });
+                }
+            }));
+        });
+    </script>
+</body>
+</html>
